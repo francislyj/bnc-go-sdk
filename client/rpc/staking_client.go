@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"strconv"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
-	"github.com/tendermint/go-amino"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -50,6 +50,7 @@ type StakingClient interface {
 
 	CreateSideChainValidator(delegation types.Coin, description msg.Description, commission types.CommissionMsg, sideChainId string, sideConsAddr []byte, sideFeeAddr []byte, syncType SyncType, options ...tx.Option) (*coretypes.ResultBroadcastTx, error)
 	EditSideChainValidator(sideChainId string, description msg.Description, commissionRate *types.Dec, sideFeeAddr []byte, syncType SyncType, options ...tx.Option) (*coretypes.ResultBroadcastTx, error)
+	EditSideChainValidatorTest(description msg.Description, commissionRate *types.Dec, syncType SyncType, options ...tx.Option) (*coretypes.ResultBroadcastTx, error)
 	SideChainDelegate(sideChainId string, valAddr types.ValAddress, delegation types.Coin, syncType SyncType, options ...tx.Option) (*coretypes.ResultBroadcastTx, error)
 	SideChainRedelegate(sideChainId string, valSrcAddr types.ValAddress, valDstAddr types.ValAddress, amount types.Coin, syncType SyncType, options ...tx.Option) (*coretypes.ResultBroadcastTx, error)
 	SideChainUnbond(sideChainId string, valAddr types.ValAddress, amount types.Coin, syncType SyncType, options ...tx.Option) (*coretypes.ResultBroadcastTx, error)
@@ -157,6 +158,56 @@ func (c *HTTP) EditSideChainValidator(sideChainId string, description msg.Descri
 
 	return c.Broadcast(m, syncType, options...)
 }
+
+func (c *HTTP) EditSideChainValidatorTest(description msg.Description, commissionRate *types.Dec, pubkey crypto.PubKey,
+	syncType SyncType, options ...tx.Option) (*coretypes.ResultBroadcastTx, error) {
+	if c.key == nil {
+		return nil, KeyMissingError
+	}
+
+	valOpAddr := types.ValAddress(c.key.GetAddr())
+
+	m := msg.EditSideChainValidatorMsgTest{
+		Description:    description,
+		CommissionRate: commissionRate,
+		//PubKey:         pubkey,
+		ValidatorAddr: valOpAddr,
+	}
+	m1 := c.cdc.MustMarshalBinaryLengthPrefixed(m)
+	fmt.Println(m1)
+	return c.Broadcast(m, syncType, options...)
+}
+
+//func (c *HTTP) EditSideChainValidatorTest(description msg.Description, commissionRate *types.Dec, pubkey crypto.PubKey, syncType SyncType, options ...tx.Option) (*coretypes.ResultBroadcastTx, error) {
+//	if c.key == nil {
+//		return nil, KeyMissingError
+//	}
+//
+//	valOpAddr := types.ValAddress(c.key.GetAddr())
+//
+//	//m := msg.NewEditSideChainValidatorMsgTest(valOpAddr, description, commissionRate)
+//
+//	rate, _ := types.NewDecFromStr("1")
+//	m2 := msg.EditSideChainValidatorMsgTest{
+//		Description: msg.Description{
+//			Moniker:  "aa",
+//			Identity: "aa",
+//			Website:  "aa",
+//			Details:  "aa",
+//		},
+//		CommissionRate: &rate,
+//		PubKey:         pubkey,
+//		ValidatorAddr:  valOpAddr,
+//	}
+//	msg := c.cdc.MustMarshalBinaryLengthPrefixed(m2)
+//	fmt.Println("EditValidator pubkey=======> %v", pubkey)
+//	fmt.Println("EditValidator valOpAddr=======> %v", valOpAddr)
+//	fmt.Println("EditValidator1 =======> %v", msg)
+//	fmt.Println("EditValidator =======> %v", hex.EncodeToString(msg))
+//	c.cdc.PrintTypes(os.Stdout)
+//
+//	return c.Broadcast(m2, syncType, options...)
+//}
 
 func (c *HTTP) SideChainDelegate(sideChainId string, valAddr types.ValAddress, delegation types.Coin, syncType SyncType,
 	options ...tx.Option) (*coretypes.ResultBroadcastTx, error) {
@@ -725,6 +776,8 @@ func (c *HTTP) EditValidator(description msg.Description, commissionRate *types.
 		PubKey:         pubkey,
 		ValidatorAddr:  valOpAddr,
 	}
+	m1 := c.cdc.MustMarshalBinaryLengthPrefixed(m)
+	fmt.Println(m1)
 	return c.Broadcast(m, syncType, options...)
 }
 

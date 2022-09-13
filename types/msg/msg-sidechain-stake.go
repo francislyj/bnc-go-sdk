@@ -3,16 +3,16 @@ package msg
 import (
 	"bytes"
 	"fmt"
-
 	"github.com/binance-chain/go-sdk/common/types"
 )
 
 const (
-	TypeCreateSideChainValidator = "side_create_validator"
-	TypeEditSideChainValidator   = "side_edit_validator"
-	TypeSideChainDelegate        = "side_delegate"
-	TypeSideChainRedelegate      = "side_redelegate"
-	TypeSideChainUndelegate      = "side_undelegate"
+	TypeCreateSideChainValidator   = "side_create_validator"
+	TypeEditSideChainValidator     = "side_edit_validator"
+	TypeEditSideChainValidatorTest = "side_edit_validator_test"
+	TypeSideChainDelegate          = "side_delegate"
+	TypeSideChainRedelegate        = "side_redelegate"
+	TypeSideChainUndelegate        = "side_undelegate"
 
 	SideChainStakeMsgRoute = "stake"
 	SideChainAddrLen       = 20
@@ -121,6 +121,67 @@ func checkSideChainAddr(addrName string, addr []byte) error {
 	}
 
 	return nil
+}
+
+//----------------------------------------------------------------------------
+
+type EditSideChainValidatorMsgTest struct {
+	Description
+	ValidatorAddr types.ValAddress `json:"address"`
+	// We pass a reference to the new commission rate as it's not mandatory to
+	// update. If not updated, the deserialized rate will be zero with no way to
+	// distinguish if an update was intended.
+	CommissionRate *types.Dec `json:"commission_rate"`
+	//PubKey         crypto.PubKey `json:"pubkey"`
+}
+
+func NewEditSideChainValidatorMsgTest(validatorAddr types.ValAddress, description Description, commissionRate *types.Dec) EditSideChainValidatorMsgTest {
+	return EditSideChainValidatorMsgTest{
+		Description:    description,
+		ValidatorAddr:  validatorAddr,
+		CommissionRate: commissionRate,
+	}
+}
+
+func (msg EditSideChainValidatorMsgTest) Route() string { return SideChainStakeMsgRoute }
+
+func (msg EditSideChainValidatorMsgTest) Type() string { return TypeEditSideChainValidatorTest }
+
+func (msg EditSideChainValidatorMsgTest) GetSigners() []types.AccAddress {
+	return []types.AccAddress{types.AccAddress(msg.ValidatorAddr)}
+}
+
+func (msg EditSideChainValidatorMsgTest) GetSignBytes() []byte {
+	bz := MsgCdc.MustMarshalJSON(msg)
+	return MustSortJSON(bz)
+}
+
+func (msg EditSideChainValidatorMsgTest) ValidateBasic() error {
+	//validator operator address length is 20
+	if len(msg.ValidatorAddr) != types.AddrLen {
+		return fmt.Errorf("Expected validator address length is %d, actual length is %d ", types.AddrLen, len(msg.ValidatorAddr))
+	}
+
+	//description check
+	if msg.Description == (Description{}) {
+		return fmt.Errorf("description must be included. if you do not want to edit the description, assign each field to [do-not-modify]")
+	}
+	if _, err := msg.Description.EnsureLength(); err != nil {
+		return err
+	}
+
+	//commission rate is between 0 and 1
+	if msg.CommissionRate != nil {
+		if msg.CommissionRate.GT(types.OneDec()) || msg.CommissionRate.LT(types.ZeroDec()) {
+			return fmt.Errorf("commission rate must be between 0 and 1 (inclusive)")
+		}
+	}
+
+	return nil
+}
+
+func (msg EditSideChainValidatorMsgTest) GetInvolvedAddresses() []types.AccAddress {
+	return msg.GetSigners()
 }
 
 //----------------------------------------------------------------------------

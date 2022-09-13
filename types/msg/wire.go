@@ -1,8 +1,6 @@
 package msg
 
-import (
-	"github.com/tendermint/go-amino"
-)
+import "github.com/tendermint/go-amino"
 
 var MsgCdc = amino.NewCodec()
 
@@ -57,6 +55,7 @@ func RegisterCodec(cdc *amino.Codec) {
 	cdc.RegisterConcrete(MsgRedelegate{}, "cosmos-sdk/MsgRedelegate", nil)
 	cdc.RegisterConcrete(MsgUndelegate{}, "cosmos-sdk/MsgUndelegate", nil)
 
+	cdc.RegisterConcrete(EditSideChainValidatorMsgTest{}, "cosmos-sdk/MsgEditSideChainValidatorTest", nil)
 	cdc.RegisterConcrete(CreateSideChainValidatorMsg{}, "cosmos-sdk/MsgCreateSideChainValidator", nil)
 	cdc.RegisterConcrete(EditSideChainValidatorMsg{}, "cosmos-sdk/MsgEditSideChainValidator", nil)
 	cdc.RegisterConcrete(SideChainDelegateMsg{}, "cosmos-sdk/MsgSideChainDelegate", nil)
